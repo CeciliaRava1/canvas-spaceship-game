@@ -1,0 +1,10 @@
+body {
+    width: 960px;
+    margin: 0 auto;
+    text-align: center;
+}
+
+canvas {
+    background-color: green;
+    border: 3px solid yellow;
+}
