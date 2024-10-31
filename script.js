@@ -9,6 +9,7 @@ game = {
     shootingColor: 'red',
     shootingArray: new Array(),
     enemyArray: new Array(),
+    positionX: 100,
 
 };
 
@@ -35,7 +36,7 @@ class Player {
         this.y = 450;
         this.draw = function (x) {
             this.x = x;
-            game.ctx.drawImage(game, image, this.x, this.y, 30, 15);
+            game.ctx.drawImage(game.image, this.x, this.y, 30, 15);
         };
     };
 };
@@ -89,7 +90,17 @@ const select = (e) => {
 const start = () => {
     game.ctx.clearRect(0, 0, game.canvas.width, game.canvas.height);
     game.cover = false;
+    game.player = new Player(0);
+    game.positionX = game.canvas.width / 2;
+    game.player.draw(game.positionX); 
+    animate();
 }
+
+
+
+
+
+
 
 
 
@@ -100,23 +111,34 @@ const animate = () => {
     requestAnimationFrame(animate);
     verifyPosition();
     draw();
-
 };
 
 const verifyPosition = () => {
-    positionX += 2;
-    if(positionX > game.canvas.width) positionX = 0;
+
+    if(game.key[keyRight]) game.positionX += 10;
+    if(game.key[keyLeft]) game.positionX -= 10;
 
 };
+
 
 const draw = () => {
     game.ctx.clearRect(0, 0, game.canvas.width, game.canvas.height);
-    game.ctx.fillStyle = 'red';
-    game.ctx.beginPath();
-    game.ctx.arc(positionX, positionY, 5, 0, 2 * Math.PI);
-    game.ctx.fill();
+    game.player.draw(game.positionX);
+
 
 };
+
+
+
+
+document.addEventListener('keydown', function(e){
+    game.keyPressed = e.keyCode;
+    game.key[e.keyCode] = true;
+});
+
+document.addEventListener('keyup', function(e){
+    game.key[e.keyCode] = false;
+});
 
 
 
@@ -135,8 +157,12 @@ window.onload = function(){
         game.ctx = canvas.getContext('2d');
     
         if(game.ctx){
+            game.image = new Image();
+            game.image.src = 'img/nave.png';
             cover();
-            // animate();
+
+            game.canvas.addEventListener('click', select, false);
+            
 
 
         } else{
