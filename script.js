@@ -10,6 +10,7 @@ game = {
     shootingArray: new Array(),
     enemyArray: new Array(),
     positionX: 100,
+    positionY: 600
 
 };
 
@@ -26,17 +27,25 @@ class Shooting {
         this.x = x;
         this.y = y;
         this.width = width;
-        this.draw = function () { };
+
+        this.draw = function () {
+            game.ctx.save();
+            game.ctx.fillStyle = game.shootingColor;
+            game.ctx.fillRect(this.x, this.y, this.width, this.width);
+            this.y -= 4;
+            game.ctx.restore();
+        };
     };
 };
 
 class Player {
     constructor(x) {
         this.x = x;
-        this.y = 450;
+        this.y = 600;
         this.draw = function (x) {
             this.x = x;
-            game.ctx.drawImage(game.image, this.x, this.y, 30, 15);
+            this.y = game.positionY;
+            game.ctx.drawImage(game.image, this.x, this.y, 190, 120);
         };
     };
 };
@@ -45,14 +54,18 @@ class Enemy {
     constructor(x, y) {
         this.x = x;
         this.y = y;
-        this. width = 35;
+        this. width = 75;
+        this.height = 70;
         this.amountOfEnemies = 0;
         this.distanceX = 5; // Speed
         this.cycles = 0;
         this.number = 14;
         this.figure = true;
         this.live = true;
-        this.draw = function () {};
+        
+        this.draw = function () {
+            game.ctx.drawImage(game.enemyImage, this.x, this.y, this.width, this.height); 
+        };
     };
 };
 
@@ -90,7 +103,7 @@ const select = (e) => {
 const start = () => {
     game.ctx.clearRect(0, 0, game.canvas.width, game.canvas.height);
     game.cover = false;
-    game.player = new Player(0);
+    game.player = new Player(game.canvas.width / 2);
     game.positionX = game.canvas.width / 2;
     game.player.draw(game.positionX); 
     animate();
@@ -114,9 +127,17 @@ const animate = () => {
 };
 
 const verifyPosition = () => {
-
     if(game.key[keyRight]) game.positionX += 10;
     if(game.key[keyLeft]) game.positionX -= 10;
+
+    if(game.positionX > game.canvas.width - 190) game.positionX = game.canvas.width - 190;
+    if(game.positionX < 0) game.positionX = -0;
+
+    // Shooting
+    if(game.key[spacebar]){
+        game.shootingArray.push(new Shooting(game.positionX + 90, game.positionY - 10, 5));
+        game.key[spacebar] = false;
+    }
 
 };
 
@@ -124,6 +145,20 @@ const verifyPosition = () => {
 const draw = () => {
     game.ctx.clearRect(0, 0, game.canvas.width, game.canvas.height);
     game.player.draw(game.positionX);
+
+    // Move shooting
+    for(let i = 0; i < game.shootingArray.length; i++){
+        if(game.shootingArray[i] != null){
+            game.shootingArray[i].draw();
+
+            if(game.shootingArray[i].y < 0) game.shootingArray[i] = null;
+        }
+    }
+
+    // Enemy
+    for(let i = 0; i < game.enemyArray.length; i ++){
+        game.enemyArray[i].draw();
+    }
 
 
 };
@@ -159,9 +194,22 @@ window.onload = function(){
         if(game.ctx){
             game.image = new Image();
             game.image.src = 'img/nave.png';
-            cover();
+            game.enemyImage = new Image();
+            game.enemyImage.src = 'img/enemy.png';
 
+            game.enemyImage.onload = function(){
+                for(let i = 0; i < 5; i++){
+                    for(let j = 0; j < 10; j ++){
+                        game.enemyArray.push(new Enemy(65+80*j, 30+70*i));
+                    };
+                };
+            };
+
+
+            cover();
             game.canvas.addEventListener('click', select, false);
+
+
             
 
 
