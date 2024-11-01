@@ -10,7 +10,7 @@ game = {
     shootingArray: new Array(),
     enemyArray: new Array(),
     positionX: 100,
-    positionY: 600
+    positionY: 770
 
 };
 
@@ -45,7 +45,7 @@ class Player {
         this.draw = function (x) {
             this.x = x;
             this.y = game.positionY;
-            game.ctx.drawImage(game.image, this.x, this.y, 190, 120);
+            game.ctx.drawImage(game.image, this.x, this.y, 120, 80);
         };
     };
 };
@@ -54,8 +54,8 @@ class Enemy {
     constructor(x, y) {
         this.x = x;
         this.y = y;
-        this. width = 75;
-        this.height = 70;
+        this. width = 60;
+        this.height = 55;
         this.amountOfEnemies = 0;
         this.distanceX = 5; // Speed
         this.cycles = 0;
@@ -64,7 +64,39 @@ class Enemy {
         this.live = true;
         
         this.draw = function () {
-            game.ctx.drawImage(game.enemyImage, this.x, this.y, this.width, this.height); 
+
+            if(this.cycles > 30){
+
+                // Change position of the enemy
+                if(this.amountOfEnemies > this.number){
+                    this.distanceX *= -1;
+                    this.amountOfEnemies = 0;
+                    this.number = 28;
+                    this.y += 20;
+                    this.distanceX = (this.distanceX > 0) ? this.distanceX ++ : this.distanceX --; // Ternary operator
+                } else {
+                    this.x += this.distanceX;
+                }
+
+                this.amountOfEnemies ++;
+                this.cycles = 0;
+                this.figure = !this.figure;
+                
+            } else {
+                this.cycles ++;
+            }
+
+
+            if(this.figure){
+                game.ctx.drawImage(game.enemyImage, 0, 0, 40, 30,this.x, this.y, 70, 65); 
+
+            } else {
+                game.ctx.drawImage(game.enemyImage, 50, 0, 35, 30, this.x, this.y, 70, 65); 
+
+            }
+
+
+
         };
     };
 };
@@ -130,7 +162,7 @@ const verifyPosition = () => {
     if(game.key[keyRight]) game.positionX += 10;
     if(game.key[keyLeft]) game.positionX -= 10;
 
-    if(game.positionX > game.canvas.width - 190) game.positionX = game.canvas.width - 190;
+    if(game.positionX > game.canvas.width - 130) game.positionX = game.canvas.width - 130;
     if(game.positionX < 0) game.positionX = -0;
 
     // Shooting
