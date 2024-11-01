@@ -7,10 +7,13 @@ game = {
     keyPressed: null,
     key: [],
     shootingColor: 'red',
+    shootingEnemyColor: 'yellow',
     shootingArray: new Array(),
     enemyArray: new Array(),
+    enemyShootingArray: new Array(),
     positionX: 100,
-    positionY: 770
+    positionY: 770,
+    shooting: false,
 
 };
 
@@ -33,6 +36,14 @@ class Shooting {
             game.ctx.fillStyle = game.shootingColor;
             game.ctx.fillRect(this.x, this.y, this.width, this.width);
             this.y -= 4;
+            game.ctx.restore();
+        };
+
+        this.shoot = function () {
+            game.ctx.save();
+            game.ctx.fillStyle = game.shootingEnemyColor;
+            game.ctx.fillRect(this.x, this.y, this.width, this.width);
+            this.y += 6;
             game.ctx.restore();
         };
     };
@@ -156,7 +167,35 @@ const animate = () => {
     requestAnimationFrame(animate);
     verifyPosition();
     draw();
+    collision();
 };
+
+const collision = () => {
+    let enemy, shooting;
+    for(let i = 0; i < game.enemyArray.length; i++){
+        
+        for(let j = 0; j < game.shootingArray.length; j++){
+            enemy = game.enemyArray[i];
+            shooting = game.shootingArray[j];
+
+            if(enemy != null && shooting != null){
+                
+                if((shooting.x > enemy.x) && 
+                (shooting.x < enemy.x + enemy.width) && 
+                (shooting.y > enemy.y) && 
+                (shooting.y < enemy.y + enemy.width)){
+
+                    enemy.live = false;
+                    game.enemyArray[i] = null;
+                    game.shootingArray[j] = null;
+                    game.shooting = false;
+                }
+            }
+        }
+    }
+}
+
+
 
 const verifyPosition = () => {
     if(game.key[keyRight]) game.positionX += 10;
@@ -167,11 +206,35 @@ const verifyPosition = () => {
 
     // Shooting
     if(game.key[spacebar]){
-        game.shootingArray.push(new Shooting(game.positionX + 90, game.positionY - 10, 5));
-        game.key[spacebar] = false;
+
+        if(game.shooting == false){
+            game.shootingArray.push(new Shooting(game.positionX + 90, game.positionY - 10, 10));
+            game.key[spacebar] = false;
+            game.shooting = true;
+        }
+    }
+
+    // Shooting enemy
+    if(Math.random() > 0.96){
+        enemyShoot();
     }
 
 };
+
+
+const enemyShoot = () => {
+    let lastRowEnemies = game.enemyArray.filter(enemy => enemy !== null && enemy.y === Math.max(...game.enemyArray.map(e => e ? e.y : 0)));
+
+    if (lastRowEnemies.length > 0) {
+        const randomIndex = Math.floor(Math.random() * lastRowEnemies.length);
+        const randomEnemy = lastRowEnemies[randomIndex];
+
+        game.enemyShootingArray.push(new Shooting(randomEnemy.x + randomEnemy.width / 2, randomEnemy.y + randomEnemy.height, 5));
+    }
+}
+
+
+
 
 
 const draw = () => {
@@ -180,16 +243,36 @@ const draw = () => {
 
     // Move shooting
     for(let i = 0; i < game.shootingArray.length; i++){
+
         if(game.shootingArray[i] != null){
             game.shootingArray[i].draw();
 
-            if(game.shootingArray[i].y < 0) game.shootingArray[i] = null;
+            if(game.shootingArray[i].y < 0){
+                game.shooting = false;
+                game.shootingArray[i] = null;
+            }
+        }
+    }
+
+    // Enemy shooting
+    for(let i = 0; i < game.enemyShootingArray.length; i++){
+
+        if(game.enemyShootingArray[i] != null){
+
+            game.enemyShootingArray[i].shoot();
+            if(game.enemyShootingArray[i].y > game.canvas.height){
+                game.enemyShootingArray[i] = null;
+            }
         }
     }
 
     // Enemy
     for(let i = 0; i < game.enemyArray.length; i ++){
-        game.enemyArray[i].draw();
+
+        if(game.enemyArray[i] != null){
+            game.enemyArray[i].draw();
+
+        }
     }
 
 
