@@ -14,6 +14,12 @@ game = {
     positionX: 100,
     positionY: 770,
     shooting: false,
+    score: 0,
+    endGame: false,
+    boing: null,
+    playerShoot: null,
+    intro: null,
+    end: null,
 
 };
 
@@ -53,10 +59,12 @@ class Player {
     constructor(x) {
         this.x = x;
         this.y = 600;
+        this.width = 120;
+        this.height = 80;
         this.draw = function (x) {
             this.x = x;
             this.y = game.positionY;
-            game.ctx.drawImage(game.image, this.x, this.y, 120, 80);
+            game.ctx.drawImage(game.image, this.x, this.y, this.width, this.height);
         };
     };
 };
@@ -154,20 +162,16 @@ const start = () => {
 
 
 
-
-
-
-
-
-
 let positionX = 100, positionY = 100;
 
 
 const animate = () => {
-    requestAnimationFrame(animate);
-    verifyPosition();
-    draw();
-    collision();
+    if(game.endGame == false){
+        requestAnimationFrame(animate);
+        verifyPosition();
+        draw();
+        collision();
+    }
 };
 
 const collision = () => {
@@ -189,37 +193,89 @@ const collision = () => {
                     game.enemyArray[i] = null;
                     game.shootingArray[j] = null;
                     game.shooting = false;
+                    game.score += 10;
+                    game.boing.play();
                 }
             }
         }
     }
-}
+
+    // Enemy shoot
+    for(let j = 0; j < game.enemyArray.length; j++){
+        shooting = game.enemyShootingArray[j];
+        if(shooting != null){
+
+            if((shooting.x > game.player.x) && 
+            (shooting.x < game.player.x + game.player.width) && 
+            (shooting.y > game.player.y) && 
+            (shooting.y < game.player.y + game.player.height)){
+
+                gameOver();
+            };
+        };
+    };
+};
 
 
+const gameOver = () => {
+    game.ctx.clearRect(0, 0, game.canvas.width, game.canvas.height);
+    game.shootingArray = [];
+    game.enemyArray = [];
+    game.enemyShootingArray = [];
+    game.endGame = true;
+    game.end.play();
+
+    messageEndGame('Game over', 240, '60px');
+    messageEndGame('Points: ' + game.score, 380, '50px');
+
+    if (game.score > 200) {
+        messageEndGame('You win!', 500, '50px');
+    } else if (game.score > 100) {
+        messageEndGame('You almost did it', 500, '50px');
+    } else {
+        messageEndGame('You lost :(', 500, '50px');
+    }
+};
+
+
+const messageEndGame = (string, y, size) => {
+    let width = game.canvas.width / 2;
+    game.ctx.save();
+    game.ctx.fillStyle = 'green';
+    game.ctx.strokeStyle = 'blue';
+    game.ctx.textBaseline = 'top';
+    game.ctx.font = 'bold ' + size + ' Courier';
+    game.ctx.textAlign = 'center';
+    game.ctx.fillText(string, width, y);
+    game.ctx.restore();
+};
+
+
+
+let lastShotTime = 0; 
+const shotInterval = 700; // ms
 
 const verifyPosition = () => {
-    if(game.key[keyRight]) game.positionX += 10;
-    if(game.key[keyLeft]) game.positionX -= 10;
+    if (game.key[keyRight]) game.positionX += 10;
+    if (game.key[keyLeft]) game.positionX -= 10;
 
-    if(game.positionX > game.canvas.width - 130) game.positionX = game.canvas.width - 130;
-    if(game.positionX < 0) game.positionX = -0;
+    if (game.positionX > game.canvas.width - 130) game.positionX = game.canvas.width - 130;
+    if (game.positionX < 0) game.positionX = 0;
 
     // Shooting
-    if(game.key[spacebar]){
-
-        if(game.shooting == false){
-            game.shootingArray.push(new Shooting(game.positionX + 90, game.positionY - 10, 10));
-            game.key[spacebar] = false;
-            game.shooting = true;
-        }
+    const currentTime = Date.now(); 
+    if (game.key[spacebar] && (currentTime - lastShotTime) > shotInterval) {
+        game.shootingArray.push(new Shooting(game.positionX + 55, game.positionY - 10, 10));
+        lastShotTime = currentTime;
+        game.playerShoot.play();
     }
 
     // Shooting enemy
-    if(Math.random() > 0.96){
+    if (Math.random() > 0.96) {
         enemyShoot();
     }
-
 };
+
 
 
 const enemyShoot = () => {
@@ -239,6 +295,7 @@ const enemyShoot = () => {
 
 const draw = () => {
     game.ctx.clearRect(0, 0, game.canvas.width, game.canvas.height);
+    score();
     game.player.draw(game.positionX);
 
     // Move shooting
@@ -265,19 +322,22 @@ const draw = () => {
             }
         }
     }
-
     // Enemy
     for(let i = 0; i < game.enemyArray.length; i ++){
 
         if(game.enemyArray[i] != null){
             game.enemyArray[i].draw();
-
         }
     }
-
-
 };
 
+const score = () => {
+    game.ctx.save();
+    game.ctx.fillStyle = 'white';
+    game.ctx.font = 'bold 40px Courier';
+    game.ctx.fillText('SCORE: ' + game.score, 30, 40);
+    game.ctx.restore();
+}
 
 
 
@@ -307,6 +367,15 @@ window.onload = function(){
         game.ctx = canvas.getContext('2d');
     
         if(game.ctx){
+
+            // Sounds
+            game.boing = document.getElementById('boing');
+            game.playerShoot = document.getElementById('playerShoot');
+            game.intro = document.getElementById('intro');
+            game.end = document.getElementById('end');
+
+
+
             game.image = new Image();
             game.image.src = 'img/nave.png';
             game.enemyImage = new Image();
@@ -315,7 +384,7 @@ window.onload = function(){
             game.enemyImage.onload = function(){
                 for(let i = 0; i < 5; i++){
                     for(let j = 0; j < 10; j ++){
-                        game.enemyArray.push(new Enemy(65+80*j, 30+70*i));
+                        game.enemyArray.push(new Enemy(65+80*j, 70+70*i)); // Enemy position
                     };
                 };
             };
